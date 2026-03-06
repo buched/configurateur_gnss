@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
@@ -5,7 +6,7 @@
     <style>
         :root { --primary: #3498db; --success: #27ae60; --danger: #e74c3c; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', sans-serif; background: #F0F2F5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; width: 90%; max-width: 950px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .container { background: white; width: 100%; max-width: 950px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: var(--dark); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
 		h5 { text-align: center; }
         .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
@@ -52,8 +53,11 @@
                 <select id="gnssModel">
                     <option value="UM980">Unicore UM980</option>
                     <option value="UM982">Unicore UM982</option>
+					<option value="UM982USB">Unicore UM982 barre de guidage en usb</option>
                     <option value="M20">Bynav M20(pas encore fait)</option>
                     <option value="M20D">Bynav M20D</option>
+					<option value="LG290P">LG290P</option>
+					<option value="NmeaLG290P">LG290P(suite de la configuration sur le port à configurer bauds 460800)</option>
                 </select>
             </div>
             <div>
@@ -178,8 +182,19 @@ btnSend.addEventListener('click', async () => {
         
         // Les lignes vides "" servent de pauses de 5s supplémentaires
         // Idéal après un FRESET pour laisser la puce redémarrer.
-        let cmds = ["FRESET", "", "", ""]; 
-
+        let cmds = [""]; 
+		if (model.startsWith("UM") || model.startsWith("M20"))
+			{
+				cmds.push("FRESET", "", "", "");
+			}
+		else if (model.startsWith("LG"))
+			{
+				cmds.push("$PQTMGNSSSTOP*09", "$PQTMCFGNMEADP,W,3,8,3,2,3,2*39", "$PQTMCFGCNST,W,1,1,1,0,0,0*2A", "$PQTMSAVEPAR*5A", "$PQTMCFGUART,W,2,460800*06", "$PQTMCFGPROT,W,1,2,00000004,00000001*3E", "$PQTMCFGSIGNAL,W,7,3,F,0,0,0*4D", "$PQTMSAVEPAR*5A");
+			}
+		else if (model.startsWith("NmeaLG"))
+			{
+				cmds.push("$PQTMSAVEPAR*5A");
+			}
         if (model.startsWith("UM")) {
             cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
             if (mode === "DUAL" && model === "UM982")
@@ -222,14 +237,28 @@ btnSend.addEventListener('click', async () => {
         // Ajout des messages NMEA
         document.querySelectorAll('.nmea:checked').forEach(cb => {
             if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
-            if (model.startsWith("UM")) {
-                cmds.push(`${cb.value} COM2 ${interval}`);
-            } else {
-                cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`);
-            }
+            if (model.startsWith("UM"))
+				{
+					cmds.push(`${cb.value} COM2 ${interval}`);
+					cmds.push("SAVECONFIG");
+				} 
+			else if(model.startsWith("M20"))
+				{
+					cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`);
+					cmds.push("SAVECONFIG");
+				}
+			else
+				{
+					cmds.push("");
+				}
+			if(model == "UM982USB")
+				{
+					cmds.push(`LOG COM4 ${cb.value} ONTIME ${interval}`);
+					cmds.push("SAVECONFIG");
+				}
+
         });
 
-        cmds.push("SAVECONFIG");
         if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
 
         // --- EXECUTION DE LA SEQUENCE ---
@@ -251,7 +280,7 @@ btnSend.addEventListener('click', async () => {
             }
 
             // On attend TOUJOURS 5 secondes, même pour une commande vide ""
-            await new Promise(r => setTimeout(r, 5000));
+            await new Promise(r => setTimeout(r, 1000));
         }
         
         log("--- CONFIGURATION TERMINÉE AVEC SUCCÈS ---");
