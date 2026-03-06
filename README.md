@@ -1,4 +1,3 @@
-[configurateur.html](https://github.com/user-attachments/files/25790536/configurateur.html)
 <!DOCTYPE html>
 <html lang="fr">
 <head>
