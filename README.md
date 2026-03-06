@@ -253,7 +253,7 @@ btnSend.addEventListener('click', async () => {
 				}
 			if(model == "UM982USB")
 				{
-					cmds.push(`LOG COM4 ${cb.value} ONTIME ${interval}`);
+					cmds.push(`${cb.value} COM4 ${interval}`);
 					cmds.push("SAVECONFIG");
 				}
 
