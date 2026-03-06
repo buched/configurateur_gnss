@@ -237,7 +237,7 @@ btnSend.addEventListener('click', async () => {
         // Ajout des messages NMEA
         document.querySelectorAll('.nmea:checked').forEach(cb => {
             if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
-            if (model.startsWith("UM"))
+            if (model === "UM982" || model === "UM980")
 				{
 					cmds.push(`${cb.value} COM2 ${interval}`);
 					cmds.push("SAVECONFIG");
@@ -280,7 +280,7 @@ btnSend.addEventListener('click', async () => {
             }
 
             // On attend TOUJOURS 5 secondes, même pour une commande vide ""
-            await new Promise(r => setTimeout(r, 1000));
+            await new Promise(r => setTimeout(r, 5000));
         }
         
         log("--- CONFIGURATION TERMINÉE AVEC SUCCÈS ---");
