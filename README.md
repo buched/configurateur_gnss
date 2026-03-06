@@ -5,7 +5,7 @@
     <style>
         :root { --primary: #3498db; --success: #27ae60; --danger: #e74c3c; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', sans-serif; background: #F0F2F5; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .container { background: white; width: 100%; max-width: 950px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .container { background: white; width: 90%; max-width: 950px; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         h1 { text-align: center; color: var(--dark); margin-bottom: 20px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
 		h5 { text-align: center; }
         .section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #fafafa; }
