@@ -229,19 +229,41 @@
             const hzVal = parseFloat(document.getElementById('hzRate').value);
             const interval = (1 / hzVal).toFixed(1);
             
-            cmds.push("", "FRESET", "", "", "");
-            if (model.startsWith("UM")) {
-                cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "CONFIG RTK TIMEOUT 180", "CONFIG RTCMB1CB2A DISABLE", "MODE ROVER UAV", "CONFIG COM2 460800");
-                if (model === "UM980") cmds.push("CONFIG SIGNALGROUP 2");
-                else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
-            } else if (model.startsWith("M20")) {
-                cmds.push("RTKTYPE ROVER", "SERIALCONFIG COM2 460800");
+            if (model.startsWith("UM") || model.startsWith("M20")) cmds.push("FRESET", "", "", "");
+			
+        if (model.startsWith("UM")) {
+            cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
+            if (mode === "DUAL" && model === "UM982") {
+                const x = document.getElementById('offsetX').value;
+                const y = document.getElementById('offsetY').value;
+                const z = document.getElementById('offsetZ').value;
+                cmds.push(`CONFIG ANTENNADELTAHEN OFFSET ${x} ${y} ${z}`, "MODE ROVER SURVEY", "CONFIG HEADING TRACTOR");
+            } else { cmds.push("MODE ROVER UAV"); }
+            if (model === "UM980") cmds.push("CONFIG SIGNALGROUP 2");
+            else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
+            cmds.push("CONFIG AGNSS DISABLE", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "MASK QZSS", "CONFIG COM2 460800");
+        } else if (model.startsWith("M20")) {
+            if (model === "M20D") cmds.push("RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS B1IB2IB3IB1CB2AB2BL1L1CL2CL5G1G2E1E5BE5AE6I5", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "ASSIGNALL BEIDOU IDLE", "ASSIGNALL GPS AUTO", "ASSIGNALL GLONASS AUTO", "ASSIGNALL GALILEO AUTO", "ASSIGNALL QZSS IDLE", "ASSIGNALL IRNSS IDLE", "INTERFACEMODE COM2 AUTO AUTO ON");
+            if (mode === "DUAL" && model === "M20D") {
+                const x = document.getElementById('offsetX').value;
+                const y = document.getElementById('offsetY').value;
+                const z = document.getElementById('offsetZ').value;
+                cmds.push(`SET ANTENNAOFFSET ${x} ${y} ${z}`);
             }
+            cmds.push("SERIALCONFIG COM2 460800");
+        }
 
-            document.querySelectorAll('.nmea:checked').forEach(cb => {
-                if (model.startsWith("UM")) cmds.push(`${cb.value} COM2 ${interval}`, "SAVECONFIG");
-                else cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`, "SAVECONFIG");
-            });
+
+        document.querySelectorAll('.nmea:checked').forEach(cb => {
+            if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
+            if (model.startsWith("UM")) {
+                cmds.push(`${cb.value} COM2 ${interval}`, "SAVECONFIG");
+            } else if(model.startsWith("M20")) {
+                cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`, "SAVECONFIG");
+            }
+        });
+
+        if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
         }
 
         btnSend.disabled = true;
