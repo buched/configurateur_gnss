@@ -229,7 +229,7 @@
             const hzVal = parseFloat(document.getElementById('hzRate').value);
             const interval = (1 / hzVal).toFixed(1);
             
-            if (model.startsWith("UM") || model.startsWith("M20")) cmds.push("FRESET", "", "", "");
+            if (model.startsWith("UM") || model.startsWith("M20")) cmds.push("FRESET", "", "", "", "UNLOGALL", "SAVECONFIG");
 			
         if (model.startsWith("UM")) {
             cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
