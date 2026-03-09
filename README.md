@@ -263,7 +263,7 @@
             }
         });
 
-        if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
+        if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1", "SAVECONFIG");
         }
 
         btnSend.disabled = true;
