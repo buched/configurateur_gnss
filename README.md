@@ -347,9 +347,6 @@
         
         log("--- TERMINÉ ---");
 		
-		await incrementGlobalCount(); 
-
-        progressContainer.style.display = "none";
         writer.releaseLock();
         btnSend.disabled = false;
         btnSend.innerText = "🚀 ENVOYER LA CONFIGURATION";
