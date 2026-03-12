@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GNSS Decoder - XML Reader</title>
+    <style>
+        :root { --primary: #3498db; --dark: #2c3e50; --light: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: #F0F2F5; margin: 0; padding: 20px; color: var(--dark); }
+        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        
+        h1 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; color: var(--dark); }
+        
+        .upload-zone { border: 2px dashed var(--primary); padding: 30px; text-align: center; border-radius: 8px; background: var(--light); cursor: pointer; transition: 0.3s; }
+        .upload-zone:hover { background: #eef2f7; }
+        #fileInput { display: none; }
+
+        .controls { margin-top: 20px; display: flex; gap: 10px; }
+        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; }
+        button:hover { opacity: 0.9; }
+
+        .result-area { margin-top: 30px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background: var(--primary); color: white; position: sticky; top: 0; }
+        tr:nth-child(even) { background: #fafafa; }
+        tr:hover { background: #f1f1f1; }
+
+        .error { color: #e74c3c; font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>DÉCODEUR DE DONNÉES XML</h1>
+    <p>Sélectionnez un fichier XML pour extraire et afficher les paramètres.</p>
+
+    <label for="fileInput" class="upload-zone" id="dropZone">
+        <strong>Cliquez ici ou glissez-déposez votre fichier XML</strong>
+        <p style="font-size: 0.9rem; color: #666;">(Fichiers .xml, .xml.txt)</p>
+    </label>
+    <input type="file" id="fileInput" accept=".xml">
+
+    <div class="controls">
+        <button onclick="window.location.href='index.html'">⬅ Retour Configurateur</button>
+        <button id="clearBtn" style="background: #7f8c8d;">Vider la vue</button>
+    </div>
+
+    <div id="errorMsg" class="error"></div>
+
+    <div class="result-area" id="resultArea">
+        </div>
+</div>
+
+<script>
+    const fileInput = document.getElementById('fileInput');
+    const resultArea = document.getElementById('resultArea');
+    const errorMsg = document.getElementById('errorMsg');
+    const clearBtn = document.getElementById('clearBtn');
+
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const xmlContent = e.target.result;
+            parseXML(xmlContent);
+        };
+        reader.readAsText(file);
+    });
+
+    function parseXML(xmlString) {
+        errorMsg.innerText = "";
+        resultArea.innerHTML = "<em>Chargement...</em>";
+
+        try {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+
+            // Vérification des erreurs de parsing
+            const parseError = xmlDoc.getElementsByTagName("parsererror");
+            if (parseError.length > 0) throw new Error("Format XML invalide");
+
+            // Extraction automatique : on cherche tous les éléments enfants du premier noeud
+            const root = xmlDoc.documentElement;
+            const items = root.children;
+
+            if (items.length === 0) {
+                resultArea.innerHTML = "Le fichier XML est vide ou n'a pas pu être lu.";
+                return;
+            }
+
+            let html = `<table><thead><tr><th>Paramètre</th><th>Valeur</th></tr></thead><tbody>`;
+
+            // On boucle sur tous les éléments trouvés dans le XML
+            for (let i = 0; i < items.length; i++) {
+                const node = items[i];
+                // Si le noeud a des enfants (sous-structure), on les affiche récursivement ou on simplifie
+                const value = node.children.length > 0 ? "[Structure complexe]" : node.textContent;
+                html += `<tr>
+                            <td><strong>${node.nodeName}</strong></td>
+                            <td>${value}</td>
+                         </tr>`;
+            }
+
+            html += `</tbody></table>`;
+            resultArea.innerHTML = html;
+
+        } catch (err) {
+            errorMsg.innerText = "Erreur : " + err.message;
+            resultArea.innerHTML = "";
+        }
+    }
+
+    clearBtn.addEventListener('click', () => {
+        resultArea.innerHTML = "";
+        fileInput.value = "";
+        errorMsg.innerText = "";
+    });
+</script>
+
+</body>
+</html>
