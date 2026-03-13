@@ -2,122 +2,198 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GNSS Decoder - XML Reader</title>
+    <title>AgOpenGPS - Comparateur de Configuration</title>
     <style>
-        :root { --primary: #3498db; --dark: #2c3e50; --light: #f4f7f6; }
-        body { font-family: 'Segoe UI', sans-serif; background: #F0F2F5; margin: 0; padding: 20px; color: var(--dark); }
-        .container { max-width: 1000px; margin: auto; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        :root { --primary: #3498db; --secondary: #e67e22; --dark: #2c3e50; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: var(--dark); }
+        .container { max-width: 1200px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: var(--dark); margin-bottom: 5px; border-bottom: 2px solid var(--primary); padding-bottom: 10px; font-size: 1.5rem; }
+        .author-tag { text-align: center; font-size: 11px; color: #7f8c8d; margin-bottom: 15px; }
+
+        .upload-section { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .upload-zone { border: 3px dashed #bdc3c7; padding: 20px; text-align: center; border-radius: 10px; background: #f9fdfb; cursor: pointer; transition: 0.3s; }
+        .upload-zone.active { border-color: var(--primary); background: #ebf5fb; }
+        .upload-zone.active-b { border-color: var(--secondary); background: #fef5e7; }
+        input[type="file"] { display: none; }
+
+        .file-name { font-size: 0.9rem; font-weight: bold; margin-top: 10px; display: block; color: #7f8c8d; }
+
+        /* Dashboard Comparatif */
+        h3 { background: var(--dark); color: white; padding: 8px 15px; border-radius: 5px; margin-top: 30px; }
+        h4 { color: var(--primary); border-bottom: 1px solid #ddd; margin-bottom: 10px; margin-top: 20px; text-transform: uppercase; font-size: 0.8rem; }
         
-        h1 { border-bottom: 2px solid var(--primary); padding-bottom: 10px; color: var(--dark); }
+        .dashboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; }
+        .card { background: #fff; border: 1px solid #ddd; padding: 12px; border-radius: 8px; border-left: 5px solid #bdc3c7; display: flex; flex-direction: column; }
+        .card.diff { border-left-color: #e74c3c; background: #fff5f5; } /* Alerte si différent */
         
-        .upload-zone { border: 2px dashed var(--primary); padding: 30px; text-align: center; border-radius: 8px; background: var(--light); cursor: pointer; transition: 0.3s; }
-        .upload-zone:hover { background: #eef2f7; }
-        #fileInput { display: none; }
+        .card label { font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 8px; font-weight: bold; }
+        .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center; }
+        .val-a { color: var(--primary); font-weight: bold; font-size: 1.1rem; }
+        .val-b { color: var(--secondary); font-weight: bold; font-size: 1.1rem; }
+        .file-label { font-size: 0.6rem; color: #999; display: block; margin-bottom: 2px; }
 
-        .controls { margin-top: 20px; display: flex; gap: 10px; }
-        button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; background: var(--primary); color: white; }
-        button:hover { opacity: 0.9; }
-
-        .result-area { margin-top: 30px; overflow-x: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background: var(--primary); color: white; position: sticky; top: 0; }
-        tr:nth-child(even) { background: #fafafa; }
-        tr:hover { background: #f1f1f1; }
-
-        .error { color: #e74c3c; font-weight: bold; margin-top: 10px; }
+        .btn-nav { background: var(--dark); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin-bottom: 20px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>DÉCODEUR DE DONNÉES XML</h1>
-    <p>Sélectionnez un fichier XML pour extraire et afficher les paramètres.</p>
+    <a href="index.html" class="btn-nav">⬅ Retour</a>
+    <h1>COMPARATEUR AGOPENGPS</h1>
+    <div class="author-tag">Outil communautaire développé par Buched - Manu - Licence CC BY 4.0</div>
 
-    <label for="fileInput" class="upload-zone" id="dropZone">
-        <strong>Cliquez ici ou glissez-déposez votre fichier XML</strong>
-        <p style="font-size: 0.9rem; color: #666;">(Fichiers .xml, .xml.txt)</p>
-    </label>
-    <input type="file" id="fileInput" accept=".xml">
+    <div class="upload-section">
+        <label for="fileA" class="upload-zone" id="zoneA">
+            <strong>Fichier A</strong><br>
+            <span id="nameA" class="file-name">Aucun fichier</span>
+        </label>
+        <input type="file" id="fileA" accept=".xml">
 
-    <div class="controls">
-        <button onclick="window.location.href='index.html'">⬅ Retour Configurateur</button>
-        <button id="clearBtn" style="background: #7f8c8d;">Vider la vue</button>
+        <label for="fileB" class="upload-zone" id="zoneB">
+            <strong>Fichier B</strong><br>
+            <span id="nameB" class="file-name">Aucun fichier</span>
+        </label>
+        <input type="file" id="fileB" accept=".xml">
     </div>
 
-    <div id="errorMsg" class="error"></div>
-
-    <div class="result-area" id="resultArea">
+    <div id="compareArea">
         </div>
 </div>
 
 <script>
-    const fileInput = document.getElementById('fileInput');
-    const resultArea = document.getElementById('resultArea');
-    const errorMsg = document.getElementById('errorMsg');
-    const clearBtn = document.getElementById('clearBtn');
+    let dataA = null;
+    let dataB = null;
 
-    fileInput.addEventListener('change', function(e) {
+    // Liste des exclusions identique à la tienne
+    const excludeList = ["setWindow_Location", "setWindow_Size", "setWindow_Maximized", "setWindow_Minimized", "setMenu_isMetric", "setMenu_isGridOn", "setMenu_isLightbarOn", "setF_CurrentDir", "setF_UserTotalArea", "setMenu_isSideGuideLines", "setMenu_isSimulatorOn", "setDisplay_lightbarCmPerPixel", "setGPS_headingFromWhichSource", "setGPS_SimLatitude", "setGPS_SimLongitude", "setDisplay_lineWidth", "setTram_tramWidth", "setTram_passes", "setMenu_isSpeedoOn", "setDisplay_colorDayFrame", "setDisplay_colorNightFrame", "setDisplay_colorSectionsDay", "setDisplay_colorFieldDay", "setDisplay_isDayMode", "setDisplay_colorFieldNight", "setDisplay_customColors", "setDisplay_isTermsAccepted", "setGPS_isRTK", "setDisplay_isStartFullScreen", "setDisplay_isKeyboardOn", "setDisplay_colorTextNight", "setDisplay_colorTextDay", "setDisplay_camZoom", "setDisplay_colorVehicle", "setDisplay_vehicleOpacity", "setDisplay_isVehicleImage", "setDisplay_isTextureOn", "SetGPS_udpWatchMsec", "setFeatures", "setIMU_isDualAsIMU", "setColor_sec01", "setColor_sec02", "setColor_sec03", "setColor_sec04", "setColor_sec05", "setColor_sec06", "setColor_sec07", "setColor_sec08", "setColor_sec09", "setColor_sec10", "setColor_sec11", "setColor_sec12", "setColor_sec13", "setColor_sec14", "setColor_sec15", "setColor_sec16", "setColor_isMultiColorSections", "setDisplay_customSectionColors", "setBrand_TBrand", "setDisplay_camSmooth", "setDisplay_isBrightnessOn", "setKey_hotkeys", "setBrand_HBrand", "setBrand_WDBrand", "setDisplay_isSvennArrowOn", "setTool_isTramOuterInverted", "setJobMenu_location", "setJobMenu_size", "setWindow_steerSettingsLocation", "setWindow_buildTracksLocation", "setWindow_formNudgeLocation", "setWindow_formNudgeSize", "setAS_snapDistanceRef", "setDisplay_buttonOrder", "setDisplay_camPitch", "setWindow_abDrawSize", "setWindow_HeadlineSize", "setWindow_HeadAcheSize", "setWindow_MapBndSize", "setWindow_BingMapSize", "setWindow_BingZoom", "setWindow_QuickABLocation", "setDisplay_isLogElevation", "setSound_isSectionsOn", "setWindow_gridSize", "setWindow_gridLocation", "setWindow_isKioskMode", "setDisplay_isAutoOffAgIO", "setWindow_isShutdownComputer", "setDisplay_isShutdownWhenNoPower", "setDisplay_isHardwareMessages", "setGPS_jumpFixAlarmDistance", "setAS_deadZoneDistance", "setAS_deadZoneHeading", "setMenu_isLightbarNotSteerBar", "setTool_isDirectionMarkers", "setAS_numGuideLines"];
+
+    document.getElementById('fileA').addEventListener('change', (e) => handleFile(e, 'A'));
+    document.getElementById('fileB').addEventListener('change', (e) => handleFile(e, 'B'));
+
+    function handleFile(e, type) {
         const file = e.target.files[0];
         if (!file) return;
-        
+        document.getElementById('name' + type).innerText = file.name;
+        document.getElementById('zone' + type).classList.add(type === 'A' ? 'active' : 'active-b');
+
         const reader = new FileReader();
-        reader.onload = function(e) {
-            const xmlContent = e.target.result;
-            parseXML(xmlContent);
+        reader.onload = (event) => {
+            const parsed = parseXMLData(event.target.result);
+            if (type === 'A') dataA = parsed; else dataB = parsed;
+            renderComparison();
         };
         reader.readAsText(file);
-    });
-
-    function parseXML(xmlString) {
-        errorMsg.innerText = "";
-        resultArea.innerHTML = "<em>Chargement...</em>";
-
-        try {
-            const parser = new DOMParser();
-            const xmlDoc = parser.parseFromString(xmlString, "text/xml");
-
-            // Vérification des erreurs de parsing
-            const parseError = xmlDoc.getElementsByTagName("parsererror");
-            if (parseError.length > 0) throw new Error("Format XML invalide");
-
-            // Extraction automatique : on cherche tous les éléments enfants du premier noeud
-            const root = xmlDoc.documentElement;
-            const items = root.children;
-
-            if (items.length === 0) {
-                resultArea.innerHTML = "Le fichier XML est vide ou n'a pas pu être lu.";
-                return;
-            }
-
-            let html = `<table><thead><tr><th>Paramètre</th><th>Valeur</th></tr></thead><tbody>`;
-
-            // On boucle sur tous les éléments trouvés dans le XML
-            for (let i = 0; i < items.length; i++) {
-                const node = items[i];
-                // Si le noeud a des enfants (sous-structure), on les affiche récursivement ou on simplifie
-                const value = node.children.length > 0 ? "[Structure complexe]" : node.textContent;
-                html += `<tr>
-                            <td><strong>${node.nodeName}</strong></td>
-                            <td>${value}</td>
-                         </tr>`;
-            }
-
-            html += `</tbody></table>`;
-            resultArea.innerHTML = html;
-
-        } catch (err) {
-            errorMsg.innerText = "Erreur : " + err.message;
-            resultArea.innerHTML = "";
-        }
     }
 
-    clearBtn.addEventListener('click', () => {
-        resultArea.innerHTML = "";
-        fileInput.value = "";
-        errorMsg.innerText = "";
-    });
+    function parseXMLData(xmlString) {
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlString, "text/xml");
+        const settings = xmlDoc.getElementsByTagName("setting");
+        let map = {};
+        for (let s of settings) {
+            map[s.getAttribute("name")] = s.getElementsByTagName("value")[0].textContent;
+        }
+        return map;
+    }
+
+    function processValues(data) {
+        if (!data) return null;
+        const v = {};
+        // Transfert et calculs
+        v.raw = data;
+        v.vehicleType = data['setVehicle_vehicleType'] === "1" ? "🌾 Moissonneuse" : (data['setVehicle_vehicleType'] === "0" ? "🚜 Tracteur" : "Autre");
+        v.wasCalc = (parseFloat(data['setAS_wasOffset']) / (parseFloat(data['setAS_countsPerDegree']) || 1)).toFixed(2);
+        v.hitch = Math.round((parseFloat(data['setVehicle_hitchLength']) || 0) * 100);
+		v.trailingToolToPivotLength = Math.round((parseFloat(data['setTool_trailingToolToPivotLength']) || 0) * 100);
+        v.track = Math.round((parseFloat(data['setVehicle_trackWidth']) || 0) * 100);
+        v.wheelbase = Math.round((parseFloat(data['setVehicle_wheelbase']) || 0) * 100);
+        v.antPivot = Math.round((parseFloat(data['setVehicle_antennaPivot']) || 0) * 100);
+        
+        let aOff = parseFloat(data['setVehicle_antennaOffset']) || 0;
+        let aSide = aOff > 0 ? "gauche" : (Math.sign(aOff) === -1 ? "droite" : "centre");
+        v.antFinal = aOff === 0 ? "Centré" : Math.round(Math.abs(aOff) * 100) + " cm " + aSide;
+        
+		let taOff = parseFloat(data['setVehicle_toolOffset']) || 0;
+        let taSide = taOff > 0 ? "droite" : (Math.sign(taOff) === -1 ? "gauche" : "centre");
+        v.tantFinal = taOff === 0 ? "Centré" : Math.round(Math.abs(taOff) * 100) + " cm " + taSide;
+		
+		let toverlap = parseFloat(data['setVehicle_toolOverlap']) || 0;
+        let toverSide = toverlap > 0 ? "gauche" : (Math.sign(toverlap) === -1 ? "droite" : "centre");
+        v.toverFinal = toverlap === 0 ? "Centré" : Math.round(Math.abs(toverlap) * 100) + " cm " + toverSide;
+		
+		v.lootkon = data['setVehicle_toolLookAheadOn'];
+		v.lootkoff = data['setVehicle_toolLookAheadOff'];
+        return v;
+    }
+
+    function renderComparison() {
+        if (!dataA) return;
+        const resA = processValues(dataA);
+        const resB = processValues(dataB); // Peut être null si 2ème fichier non chargé
+
+        const target = document.getElementById('compareArea');
+        
+        target.innerHTML = `
+            <h3>Réglages direction</h3>
+            <h4>Pure Pursuit</h4>
+            <div class="dashboard">
+                ${compCard("Wheelbase Pure Pursuit", dataA['setVehicle_wheelbase'] + " m", resB ? dataB['setVehicle_wheelbase'] + " m" : null)}
+                ${compCard("Integral Pure Pursuit", dataA['purePursuitIntegralGainAB'], resB ? dataB['purePursuitIntegralGainAB'] : null)}
+            </div>
+            
+            <h4>Direction & WAS</h4>
+            <div class="dashboard">
+                ${compCard("WAS Offset (Calc)", resA.wasCalc, resB ? resB.wasCalc : null)}
+                ${compCard("Counts Per Degree", dataA['setAS_countsPerDegree'], resB ? dataB['setAS_countsPerDegree'] : null)}
+                ${compCard("Ackermann", dataA['setAS_ackerman'], resB ? dataB['setAS_ackerman'] : null)}
+                ${compCard("Angle max", dataA['setVehicle_maxSteerAngle'], resB ? dataB['setVehicle_maxSteerAngle'] : null)}
+            </div>
+
+            <h4>Gains & Réglages</h4>
+            <div class="dashboard">
+                ${compCard("Gain proportionnel (Kp)", dataA['setAS_Kp'], resB ? dataB['setAS_Kp'] : null)}
+                ${compCard("Limite maximale (PWM)", dataA['setAS_highSteerPWM'], resB ? dataB['setAS_highSteerPWM'] : null)}
+                ${compCard("Min pour tourner", dataMapA('setAS_minSteerPWM'), resB ? dataMapB('setAS_minSteerPWM') : null)}
+            </div>
+
+            <h3>Configuration Machine</h3>
+            <div class="dashboard">
+                ${compCard("Type de machine", resA.vehicleType, resB ? resB.vehicleType : null)}
+                ${compCard("Voie (cm)", resA.track, resB ? resB.track : null)}
+                ${compCard("Empattement (cm)", resA.wheelbase, resB ? resB.wheelbase : null)}
+                ${compCard("Antenne/Pivot (cm)", resA.antPivot, resB ? resB.antPivot : null)}
+                ${compCard("Offset Antenne", resA.antFinal, resB ? resB.antFinal : null)}
+            </div>
+			
+			<h3>Configuration Outils</h3>
+            <div class="dashboard">
+                ${compCard("Type de machine", resA.vehicleType, resB ? resB.vehicleType : null)}
+                ${compCard("Dist. Pont/Pivot (cm)", resA.hitch, resB ? resB.hitch : null)}
+				${compCard("Dist. essieu outil/barre de semis", resA.trailingToolToPivotLength, resB ? resB.trailingToolToPivotLength : null)}				
+                ${compCard("Offset Antenne outils", resA.tantFinal, resB ? resB.tantFinal : null)}
+                ${compCard("overlap outils", resA.toverFinal, resB ? resB.toverFinal : null)}
+				${compCard("Largeur Outils (cm)", resA.toolwidth, resB ? resB.toolwidth : null)}
+				${compCard("Lookaheadon (s)", resA.lootkon, resB ? resB.lootkon : null)}
+				${compCard("Lookaheadoff (s)", resA.lootkoff, resB ? resB.lootkoff : null)}
+            </div>
+        `;
+    }
+
+    function dataMapA(key) { return dataA[key] || 'N/A'; }
+    function dataMapB(key) { return dataB ? (dataB[key] || 'N/A') : null; }
+
+    function compCard(label, val1, val2) {
+        const isDiff = val2 !== null && val1.toString() !== val2.toString();
+        return `
+            <div class="card ${isDiff ? 'diff' : ''}">
+                <label>${label}</label>
+                <div class="compare-grid">
+                    <div><span class="file-label">FICHIER A</span><span class="val-a">${val1}</span></div>
+                    <div><span class="file-label">FICHIER B</span><span class="val-b">${val2 !== null ? val2 : '--'}</span></div>
+                </div>
+            </div>
+        `;
+    }
 </script>
 
 </body>
