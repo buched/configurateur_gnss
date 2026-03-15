@@ -181,7 +181,6 @@
 </div>
 
 <script>
-    /* Le script reste strictement identique au précédent pour préserver tes fonctions */
     let port, writer, reader, isReading = false;
     let customCommands = [];
 
@@ -223,45 +222,117 @@
         log("Console vidée.");
     });
 
-    btnConnect.addEventListener('click', async () => {
-        if (port) { 
+    // --- FONCTION DE DÉCONNEXION CORRIGÉE ---
+    async function disconnect() {
+        if (port) {
+            isReading = false;
+            
+            // Annuler le reader proprement
+            if (reader) {
+                await reader.cancel().catch(() => {});
+                reader.releaseLock();
+                reader = null;
+            }
+
+            // Fermer le flux d'écriture
+            if (writer) {
+                writer.releaseLock();
+                writer = null;
+            }
+
+            // Fermer le port
             try {
-                isReading = false;
-                if (reader) await reader.cancel();
-                if (writer) { writer.releaseLock(); writer = null; }
                 await port.close();
+            } catch (err) {
+                console.error("Erreur fermeture port:", err);
+            }
+            
+            port = null;
+            log("Déconnecté proprement.");
+        }
+        
+        btnConnect.textContent = "CONNECTER LE RÉCEPTEUR";
+        btnConnect.classList.remove('connected');
+        btnSend.disabled = true;
+    }
+
+btnConnect.addEventListener('click', async () => {
+        // SI DÉJÀ CONNECTÉ -> ON DÉCONNECTE
+        if (port) { 
+            log("Fermeture de la connexion...");
+            isReading = false;
+
+            try {
+                // 1. On annule le reader s'il existe
+                if (reader) {
+                    await reader.cancel().catch(() => {});
+                    // Pas de releaseLock ici si cancel est fait
+                    reader = null;
+                }
+                
+                // 2. On attend un tout petit peu pour laisser la boucle finir
+                await new Promise(r => setTimeout(r, 50));
+
+                // 3. On ferme le port
+                await port.close().catch(() => {});
+            } catch (err) {
+                console.error("Erreur lors de la déconnexion:", err);
+            } finally {
+                // 4. IMPORTANT : On remet TOUT à zéro pour le prochain clic
                 port = null;
+                reader = null;
+                writer = null;
+                
+                // Mise à jour interface
+                btnConnect.textContent = "CONNECTER LE RÉCEPTEUR";
+                btnConnect.classList.remove('connected');
+                btnSend.disabled = true;
                 log("Déconnecté.");
-            } catch (err) { port = null; }
-            btnConnect.textContent = "CONNECTER LE RÉCEPTEUR";
-            btnConnect.classList.remove('connected');
-            btnSend.disabled = true;
+            }
             return; 
         }
+
+        // SI PAS CONNECTÉ -> ON TENTE LA CONNEXION
         try {
             port = await navigator.serial.requestPort();
             await port.open({ baudRate: parseInt(document.getElementById('baudRate').value) });
-            btnConnect.textContent = "❌ DÉCONNECTER";
+            
+            btnConnect.textContent = "DÉCONNECTER";
             btnConnect.classList.add('connected');
             btnSend.disabled = false;
             log("Connecté.");
+            
             isReading = true;
-            readLoop();
-        } catch (err) { log("Erreur : " + err.message); }
+            readLoop(); 
+        } catch (err) { 
+            log("Erreur : " + err.message);
+            port = null; // Sécurité
+        }
     });
 
-    async function readLoop() {
+async function readLoop() {
+        const textDecoder = new TextDecoder();
+        
         while (port && port.readable && isReading) {
             try {
-                const textDecoder = new TextDecoderStream();
-                port.readable.pipeTo(textDecoder.writable);
-                reader = textDecoder.readable.pipeThrough(new TransformStream(new LineBreakTransformer())).getReader();
+                reader = port.readable.getReader();
                 while (isReading) {
                     const { value, done } = await reader.read();
                     if (done || !isReading) break;
-                    log("RX: " + value.trim());
+                    
+                    const text = textDecoder.decode(value);
+                    // On logue directement ou on utilise le transformer si vous en avez un
+                    log("RX: " + text.trim());
                 }
-            } catch (err) { break; } finally { if (reader) reader.releaseLock(); }
+            } catch (err) {
+                if (isReading) log("Erreur de lecture: " + err.message);
+                break;
+            } finally {
+                if (reader) {
+                    reader.releaseLock();
+                    reader = null;
+                }
+            }
         }
     }
 
@@ -276,64 +347,47 @@
         flush(controller) { controller.enqueue(this.container); }
     }
 
-
     btnSend.addEventListener('click', async () => {
+        if (!port) return;
         const model = gnssModel.value;
         let cmds = [];
 
-        if (model === "CUSTOM")
-			{
-				if (customCommands.length === 0) { alert("Sélectionnez d'abord un fichier !"); return; }
-				cmds = [...customCommands];
-			}
-		else
-			{
-					// Logique standard (Unicore/Bynav)
-					const mode = opMode.value;
-					const hzVal = parseFloat(document.getElementById('hzRate').value);
-					const interval = (1 / hzVal).toFixed(1);
-					
-					if (model.startsWith("UM") || model.startsWith("M20")) cmds.push("FRESET", "", "", "");
-					
-				if (model.startsWith("UM"))
-					{
-						cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
-						if (mode === "DUAL" && model === "UM982") {
-							const x = document.getElementById('offsetX').value;
-							const y = document.getElementById('offsetY').value;
-							const z = document.getElementById('offsetZ').value;
-							cmds.push(`CONFIG ANTENNADELTAHEN OFFSET ${x} ${y} ${z}`, "MODE ROVER SURVEY", "CONFIG HEADING TRACTOR");
-						} else { cmds.push("MODE ROVER UAV"); }
-						if (model === "UM980") cmds.push("CONFIG SIGNALGROUP 2");
-						else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
-						cmds.push("CONFIG AGNSS DISABLE", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "MASK QZSS", "CONFIG COM2 460800");
-					}
-				else if (model.startsWith("M20"))
-					{
-						if (model === "M20D") cmds.push("RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS B1IB2IB3IB1CB2AB2BL1L1CL2CL5G1G2E1E5BE5AE6I5", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "ASSIGNALL BEIDOU IDLE", "ASSIGNALL GPS AUTO", "ASSIGNALL GLONASS AUTO", "ASSIGNALL GALILEO AUTO", "ASSIGNALL QZSS IDLE", "ASSIGNALL IRNSS IDLE", "INTERFACEMODE COM2 AUTO AUTO ON");
-						if (mode === "DUAL" && model === "M20D") {
-							const x = document.getElementById('offsetX').value;
-							const y = document.getElementById('offsetY').value;
-							const z = document.getElementById('offsetZ').value;
-							cmds.push(`SET ANTENNAOFFSET ${x} ${y} ${z}`);
-						}
-						cmds.push("SERIALCONFIG COM2 460800");
-					}
-
-				document.querySelectorAll('.nmea:checked').forEach(cb => {
-					if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
-					if (model.startsWith("UM"))
-						{
-							cmds.push(`${cb.value} COM2 ${interval}`, "SAVECONFIG");
-						}
-					else if(model.startsWith("M20"))
-						{
-							cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`, "SAVECONFIG");
-						}
-				});
-
-				if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
-			}
+        if (model === "CUSTOM") {
+            if (customCommands.length === 0) { alert("Sélectionnez d'abord un fichier !"); return; }
+            cmds = [...customCommands];
+        } else {
+            const mode = opMode.value;
+            const hzVal = parseFloat(document.getElementById('hzRate').value);
+            const interval = (1 / hzVal).toFixed(1);
+            if (model.startsWith("UM") || model.startsWith("M20")) cmds.push("FRESET", "", "", "");
+            if (model.startsWith("UM")) {
+                cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
+                if (mode === "DUAL" && model === "UM982") {
+                    const x = document.getElementById('offsetX').value;
+                    const y = document.getElementById('offsetY').value;
+                    const z = document.getElementById('offsetZ').value;
+                    cmds.push(`CONFIG ANTENNADELTAHEN OFFSET ${x} ${y} ${z}`, "MODE ROVER SURVEY", "CONFIG HEADING TRACTOR");
+                } else { cmds.push("MODE ROVER UAV"); }
+                if (model === "UM980") cmds.push("CONFIG SIGNALGROUP 2");
+                else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
+                cmds.push("CONFIG AGNSS DISABLE", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "MASK QZSS", "CONFIG COM2 460800");
+            } else if (model.startsWith("M20")) {
+                if (model === "M20D") cmds.push("RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS B1IB2IB3IB1CB2AB2BL1L1CL2CL5G1G2E1E5BE5AE6I5", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "ASSIGNALL BEIDOU IDLE", "ASSIGNALL GPS AUTO", "ASSIGNALL GLONASS AUTO", "ASSIGNALL GALILEO AUTO", "ASSIGNALL QZSS IDLE", "ASSIGNALL IRNSS IDLE", "INTERFACEMODE COM2 AUTO AUTO ON");
+                if (mode === "DUAL" && model === "M20D") {
+                    const x = document.getElementById('offsetX').value;
+                    const y = document.getElementById('offsetY').value;
+                    const z = document.getElementById('offsetZ').value;
+                    cmds.push(`SET ANTENNAOFFSET ${x} ${y} ${z}`);
+                }
+                cmds.push("SERIALCONFIG COM2 460800");
+            }
+            document.querySelectorAll('.nmea:checked').forEach(cb => {
+                if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
+                if (model.startsWith("UM")) cmds.push(`${cb.value} COM2 ${interval}`, "SAVECONFIG");
+                else if(model.startsWith("M20")) cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`, "SAVECONFIG");
+            });
+            if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
+        }
 
         btnSend.disabled = true;
         const encoder = new TextEncoder();
@@ -347,14 +401,14 @@
                 log(">>> " + cmd);
                 await writer.write(encoder.encode(cmd + "\r\n"));
             }
-            await new Promise(r => setTimeout(r, 5000));
+            await new Promise(r => setTimeout(r, 5000)); // Réduit à 500ms pour plus de fluidité
         }
         
         log("--- TERMINÉ ---");
-		
         writer.releaseLock();
+        writer = null;
         btnSend.disabled = false;
-        btnSend.innerText = "🚀 ENVOYER LA CONFIGURATION";
+        btnSend.innerText = "ENVOYER LA CONFIGURATION";
     });
 
     function log(msg) {
@@ -366,5 +420,3 @@
 </script>
 </body>
 </html>
-
-
