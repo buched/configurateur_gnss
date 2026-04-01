@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GNSS Config v3.0 - Manu alias Buched</title>
+    <title>GNSS Config v4.6 - Manu alias Buched</title>
     <style>
         :root { --primary: #3498db; --success: #27ae60; --danger: #e74c3c; --dark: #2c3e50; --aog: #2ecc71; }
         body { font-family: 'Segoe UI', sans-serif; background: #F0F2F5; margin: 0; padding: 10px; display: flex; justify-content: center; }
@@ -22,10 +22,10 @@
         .nmea-item { display: flex; align-items: center; font-size: 12px; }
         .nmea-item input { width: 20px; height: 20px; margin-right: 8px; }
         #btnConnect { background: var(--primary); color: white; border: none; cursor: pointer; font-weight: bold; height: 50px; }
-        #btnConnect.connected { background: var(--danger); }
+        #btnConnect.connected { background: var(--danger) !important; }
         #btnScan { background: var(--dark); color: white; border: none; cursor: pointer; font-size: 11px; margin-top: 5px; height: 35px; font-weight: bold; }
         #btnSend { background: var(--success); color: white; border: none; cursor: pointer; font-weight: bold; font-size: 16px; min-height: 65px; margin-top: 15px; width: 100%; }
-        #btnSend:disabled { background: #ccc; cursor: not-allowed; }
+        #btnSend:disabled { background: #ccc !important; cursor: not-allowed; opacity: 0.6; }
         #btnClear { background: #7f8c8d; color: white; margin-top: 10px; height: 40px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; border-radius: 5px; }
         #console { background: #000; color: #00ff00; font-family: 'Consolas', monospace; height: 300px; margin-top: 10px; font-size: 10px; overflow-y: auto; padding: 10px; border-radius: 5px; white-space: pre-wrap; border: 1px solid #333; }
     </style>
@@ -59,30 +59,9 @@
     <div class="section">
         <div class="section-title">2. Matériel & Mode</div>
         <div class="grid">
-            <div>
-                <label>Modèle de carte :</label>
-                <select id="gnssModel">
-                    <option value="UM980">Unicore UM980</option>
-                    <option value="UM982">Unicore UM982</option>
-                    <option value="M20D">Bynav M20D</option>
-                </select>
-            </div>
-            <div id="standardOptions1">
-                <label>Mode :</label>
-                <select id="opMode">
-                    <option value="SINGLE">Single Antenna</option>
-                    <option value="DUAL">Dual Antenna</option>
-                </select>
-            </div>
-            <div id="standardOptions2">
-                <label>Fréquence :</label>
-                <select id="hzRate" class="aog-default">
-                    <option value="1">1 Hz</option>
-                    <option value="2">2 Hz</option>
-                    <option value="5">5 Hz</option>
-                    <option value="10" selected>10 Hz (AOG)</option>
-                </select>
-            </div>
+            <div><label>Modèle :</label><select id="gnssModel"><option value="UM980">Unicore UM980</option><option value="UM982">Unicore UM982</option><option value="M20D">Bynav M20D</option></select></div>
+            <div><label>Mode :</label><select id="opMode"><option value="SINGLE">Single Antenna</option><option value="DUAL">Dual Antenna</option></select></div>
+            <div><label>Fréquence :</label><select id="hzRate" class="aog-default"><option value="1">1 Hz</option><option value="5">5 Hz</option><option value="10" selected>10 Hz (AOG)</option></select></div>
         </div>
     </div>
 
@@ -96,15 +75,15 @@
     </div>
 
     <div id="nmeaSection" class="section">
-        <div class="section-title">4. Sortie NMEA (Port COM2)</div>
+        <div class="section-title">4. Sortie NMEA (COM2)</div>
         <div class="nmea-grid">
             <div class="nmea-item aog-default"><input type="checkbox" class="nmea" value="GPGGA" checked> GGA</div>
             <div class="nmea-item"><input type="checkbox" class="nmea" value="GPRMC"> RMC</div>
             <div class="nmea-item aog-default"><input type="checkbox" class="nmea" value="GPVTG" checked> VTG</div>
             <div class="nmea-item"><input type="checkbox" class="nmea" value="GPGSA"> GSA</div>
             <div class="nmea-item"><input type="checkbox" class="nmea" value="GPGSV"> GSV</div>
-            <div class="nmea-item" id="itemHeading"><input type="checkbox" class="nmea" value="GPHEADING"> HEADING</div>
-            <div class="nmea-item" id="itemRoot"><input type="checkbox" class="nmea" value="GPROOT"> ROOT</div>
+            <div class="nmea-item"><input type="checkbox" class="nmea" value="GPHEADING"> HEADING</div>
+            <div class="nmea-item"><input type="checkbox" class="nmea" value="GPROOT"> ROOT</div>
             <div class="nmea-item"><input type="checkbox" class="nmea" value="GPGST"> GST</div>
         </div>
     </div>
@@ -115,199 +94,213 @@
 </div>
 
 <script>
-    let port, writer, reader, isReading = false;
-    const baudsToScan = [38400, 57600, 115200, 230400, 460800, 921600, 9600];
+    let port = null;
+    let reader = null;
+    let isReading = false;
+    let isConfiguring = false;
 
     const btnConnect = document.getElementById('btnConnect');
     const btnScan = document.getElementById('btnScan');
     const btnSend = document.getElementById('btnSend');
     const consoleDiv = document.getElementById('console');
     const baudSelect = document.getElementById('baudRate');
-    const gnssModel = document.getElementById('gnssModel');
-    const opMode = document.getElementById('opMode');
+    const modelSelect = document.getElementById('gnssModel');
+
+    function log(msg) { 
+        consoleDiv.innerText += `[${new Date().toLocaleTimeString()}] ${msg}\n`; 
+        consoleDiv.scrollTop = consoleDiv.scrollHeight; 
+    }
 
     function updateUI() {
-        const isDual = opMode.value === "DUAL";
-        document.getElementById('dualSection').style.display = isDual ? 'block' : 'none';
+        document.getElementById('dualSection').style.display = (document.getElementById('opMode').value === "DUAL") ? 'block' : 'none';
     }
-    gnssModel.addEventListener('change', updateUI);
-    opMode.addEventListener('change', updateUI);
 
-    // --- FONCTION SCAN AVEC DÉTECTION AUTO DU MODÈLE ---
-    btnScan.addEventListener('click', async () => {
-        if (!port) {
-            try { port = await navigator.serial.requestPort(); } catch (err) { return; }
-        }
-
-        const encoder = new TextEncoder();
-        const decoder = new TextDecoder();
-
-        for (let speed of baudsToScan) {
-            log(`--- Test : ${speed} bauds ---`);
-            isReading = false;
-            if (reader) { await reader.cancel().catch(()=>{}); reader = null; }
-            await new Promise(r => setTimeout(r, 100));
-            try { await port.close().catch(()=>{}); } catch(e){}
-
-            try {
-                await port.open({ baudRate: speed });
-                let writerTemp = port.writable.getWriter();
-                // On envoie les commandes de détection
-                await writerTemp.write(encoder.encode("LOG COM1 BYCONFIGA ONTIME 1\r\n"));
-                await writerTemp.write(encoder.encode("VERSIONA\r\n"));
-                writerTemp.releaseLock();
-
-                let readerTemp = port.readable.getReader();
-                let found = false;
-                const timeout = setTimeout(() => readerTemp.cancel(), 2000);
-
-                try {
-                    while (true) {
-                        const { value, done } = await readerTemp.read();
-                        if (done) break;
-                        const response = decoder.decode(value);
-                        
-                        // 1. Détection Bynav via BYCONFIG
-                        if (response.includes("<"))
-							{
-								log(`✅ Bynav M20D détecté à ${speed} !`);
-								gnssModel.value = "M20D";
-								found = true;
-							}
-						else if (response.includes("UM960"))
-							{
-								log(`✅ Unicore UM960 détecté à ${speed} !`);
-								gnssModel.value = "UM980";
-								found = true;
-							}	
-                        else if (response.includes("UM980"))
-							{
-								log(`✅ Unicore UM980 détecté à ${speed} !`);
-								gnssModel.value = "UM980";
-								found = true;
-							}
-						else if (response.includes("UM982"))
-							{
-								log(`✅ Unicore UM982 détecté à ${speed} !`);
-								gnssModel.value = "UM982";
-								found = true;
-							}
-
-                        if (found) {
-                            baudSelect.value = speed;
-                            clearTimeout(timeout);
-                            readerTemp.releaseLock();
-                            btnConnect.textContent = "DÉCONNECTER";
-                            btnConnect.classList.add('connected');
-                            btnSend.disabled = false;
-                            isReading = true;
-                            updateUI();
-                            readLoop();
-                            return;
-                        }
-                    }
-                } catch (e) {} finally {
-                    if (!found) {
-                        if (readerTemp) readerTemp.releaseLock();
-                        await port.close().catch(()=>{});
-                    }
-                }
-            } catch (err) { log(`Erreur vitesse ${speed}: ${err.message}`); }
-        }
-        log("❌ Aucun récepteur identifié.");
-    });
-
-    btnConnect.addEventListener('click', async () => {
-        if (port && btnConnect.classList.contains('connected')) { 
-            isReading = false;
-            if (reader) { await reader.cancel().catch(()=>{}); reader = null; }
-            await new Promise(r => setTimeout(r, 100));
-            await port.close().catch(()=>{});
-            btnConnect.textContent = "CONNECTER LE RÉCEPTEUR";
-            btnConnect.classList.remove('connected');
-            btnSend.disabled = true;
-            log("Déconnecté.");
-            return; 
-        }
-        try {
-            if (!port) port = await navigator.serial.requestPort();
-            await port.open({ baudRate: parseInt(baudSelect.value) });
+    function updateButtonState(isConnected) {
+        if (isConnected) {
             btnConnect.textContent = "DÉCONNECTER";
             btnConnect.classList.add('connected');
             btnSend.disabled = false;
-            log("Connecté.");
-            isReading = true;
-            readLoop(); 
-        } catch (err) { log("Erreur : " + err.message); }
-    });
-
-    async function readLoop() {
-        const decoder = new TextDecoder();
-        while (port && port.readable && isReading) {
-            try {
-                reader = port.readable.getReader();
-                while (isReading) {
-                    const { value, done } = await reader.read();
-                    if (done || !isReading) break;
-                    log("RX: " + decoder.decode(value).trim());
-                }
-            } catch (err) { break; } finally { if(reader) { reader.releaseLock(); reader = null; } }
+        } else {
+            btnConnect.textContent = "CONNECTER LE RÉCEPTEUR";
+            btnConnect.classList.remove('connected');
+            btnSend.disabled = true;
         }
     }
 
-    btnSend.addEventListener('click', async () => {
-        if (!port) return;
-        const model = gnssModel.value;
-        const mode = opMode.value;
-        const hzVal = parseFloat(document.getElementById('hzRate').value);
-        const interval = (1 / hzVal).toFixed(1);
-        let cmds = ["FRESET", "", "", ""];
-
-        if (model.startsWith("UM")) {
-            cmds.push("VERSIONA", "CONFIG ANTENNA POWERON", "", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "CONFIG RTK RELIABILITY 4 3", "CONFIG PPP TIMEOUT 180", "CONFIG HEADING RELIABILITY 4", "CONFIG DGPS TIMEOUT 300", "CONFIG RTCMB1CB2A DISABLE", "CONFIG HEADING LENGTH 150.00 3.00", "CONFIG PPS ENABLE GPS POSITIVE 500000 1000 0 0");
-                if (mode === "DUAL" && model === "UM982") {
-                const x = document.getElementById('offsetX').value, y = document.getElementById('offsetY').value, z = document.getElementById('offsetZ').value;
-                cmds.push(`CONFIG ANTENNADELTAHEN OFFSET ${x} ${y} ${z}`, "MODE ROVER SURVEY", "CONFIG HEADING TRACTOR");
-            } else { cmds.push("MODE ROVER UAV"); }
-            if (model === "UM980") cmds.push("CONFIG SIGNALGROUP 2");
-            else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
-            cmds.push("CONFIG AGNSS DISABLE", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "MASK QZSS", "CONFIG COM2 460800");
-        } else if (model.startsWith("M20")) {
-            if (model === "M20D") cmds.push("RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS B1IB2IB3IB1CB2AB2BL1L1CL2CL5G1G2E1E5BE5AE6I5", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "ASSIGNALL BEIDOU IDLE", "ASSIGNALL GPS AUTO", "ASSIGNALL GLONASS AUTO", "ASSIGNALL GALILEO AUTO", "ASSIGNALL QZSS IDLE", "ASSIGNALL IRNSS IDLE", "INTERFACEMODE COM2 AUTO AUTO ON");
-            if (mode === "DUAL" && model === "M20D") {
-                const x = document.getElementById('offsetX').value, y = document.getElementById('offsetY').value, z = document.getElementById('offsetZ').value;
-                cmds.push(`SET ANTENNAOFFSET ${x} ${y} ${z}`);
-            }
-            cmds.push("SERIALCONFIG COM2 460800");
+    async function smartOpen(baud) {
+        if (!port) return false;
+        if (port.opened) { updateButtonState(true); return true; }
+        try {
+            await port.open({ baudRate: parseInt(baud) });
+            log(`✅ Port ouvert : ${baud} bauds.`);
+            updateButtonState(true);
+            startReading();
+            return true;
+        } catch (e) {
+            if (e.message.includes("already open")) { updateButtonState(true); return true; }
+            log(`❌ Erreur : ${e.message}`);
+            return false;
         }
+    }
 
-        document.querySelectorAll('.nmea:checked').forEach(cb => {
-            if (mode === "SINGLE" && (cb.value === "GPHEADING" || cb.value === "GPROOT")) return;
-            if (model.startsWith("UM")) cmds.push(`${cb.value} COM2 ${interval}`, "SAVECONFIG");
-            else if(model.startsWith("M20")) cmds.push(`LOG COM2 ${cb.value} ONTIME ${interval}`, "SAVECONFIG");
-        });
-        if (model.startsWith("M20")) cmds.push("REBOOT", "", "LOG COM4 GPGGA ONTIME 1");
+    async function safeClose() {
+        isReading = false;
+        if (reader) { try { await reader.cancel(); await reader.releaseLock(); } catch(e) {} reader = null; }
+        if (port && port.opened) { try { await port.close(); } catch(e) {} }
+        log("🔌 Déconnecté.");
+        updateButtonState(false);
+    }
 
+    async function startReading() {
+        if (isReading) return;
+        isReading = true;
+        const decoder = new TextDecoder();
+        while (port && port.opened && isReading) {
+            try {
+                reader = port.readable.getReader();
+                while (true) {
+                    const { value, done } = await reader.read();
+                    if (done) break;
+                    const txt = decoder.decode(value).trim();
+                    if (txt.length > 5 && !isConfiguring) log("RX: " + txt);
+                }
+            } catch (err) { break; } 
+            finally { if(reader) { try { reader.releaseLock(); } catch(e){} reader = null; } }
+        }
+    }
+
+btnScan.onclick = async () => {
+        try {
+            port = await navigator.serial.requestPort();
+            const encoder = new TextEncoder();
+            const decoder = new TextDecoder();
+            const bauds = [115200, 460800, 921600, 38400, 9600];
+
+            log("🔍 Recherche du récepteur...");
+
+            for (let speed of bauds) {
+                log(`Test : ${speed} bauds...`);
+                try {
+                    if (port.opened) await port.close();
+                    await port.open({ baudRate: speed });
+                    
+                    const writer = port.writable.getWriter();
+                    await writer.write(encoder.encode("LOG COM1 BYCONFIGA ONTIME 1\r\nVERSIONA\r\n"));
+                    writer.releaseLock();
+
+                    const reader = port.readable.getReader();
+                    const timeout = setTimeout(() => reader.cancel(), 1200);
+                    
+                    let fullResponse = "";
+                    try {
+                        while(true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+                            fullResponse += decoder.decode(value).toUpperCase();
+                            // Si on trouve le signe distinctif de Bynav, on arrête de lire
+                            if (fullResponse.includes("<")) break; 
+                        }
+                    } catch(e) {} // Timeout ou cancel
+                    
+                    clearTimeout(timeout);
+                    reader.releaseLock();
+
+                    if (fullResponse.length > 0) {
+                        let modelFound = "Générique";
+                        let gnssVal = "UM980";
+
+                        // Détection précise
+                        if (fullResponse.includes("<") || fullResponse.includes("BYNAV")) { 
+                            modelFound = "Bynav M20D"; 
+                            gnssVal = "M20D"; 
+                        }
+                        else if (fullResponse.includes("UM982")) { 
+                            modelFound = "Unicore UM982"; 
+                            gnssVal = "UM982"; 
+                        }
+                        else if (fullResponse.includes("UM980") || fullResponse.includes("UM960")) { 
+                            modelFound = "Unicore UM980"; 
+                            gnssVal = "UM980"; 
+                        }
+
+                        log(`✅ ${modelFound} identifié à ${speed} bauds !`);
+                        
+                        document.getElementById('gnssModel').value = gnssVal;
+                        baudSelect.value = speed;
+                        
+                        updateButtonState(true);
+                        startReading();
+                        updateUI();
+                        return; 
+                    }
+                    await port.close();
+                } catch (e) {
+                    if (port.opened) await port.close();
+                }
+            }
+            log("❌ Aucun signal. Vérifie le branchement.");
+        } catch (e) {
+            log("Erreur : " + e.message);
+        }
+    };
+
+    btnConnect.onclick = async () => {
+        if (btnConnect.classList.contains('connected')) { await safeClose(); return; }
+        if (!port) port = await navigator.serial.requestPort();
+        await smartOpen(baudSelect.value);
+    };
+
+    btnSend.onclick = async () => {
+        if (isConfiguring) return;
+        isConfiguring = true;
         btnSend.disabled = true;
         const encoder = new TextEncoder();
-        writer = port.writable.getWriter();
-        log(`--- Injection : ${model} (${cmds.length} lignes) ---`);
-        for (let i = 0; i < cmds.length; i++) {
-            btnSend.innerText = `Étape ${i+1}/${cmds.length}...`;
-            if (cmds[i].trim() !== "") {
-                log(">>> " + cmds[i]);
-                await writer.write(encoder.encode(cmds[i] + "\r\n"));
-            }
-            await new Promise(r => setTimeout(r, 5000));
-        }
-        log("--- TERMINÉ ---");
-        writer.releaseLock();
-        btnSend.disabled = false;
-        btnSend.innerText = "ENVOYER LA CONFIGURATION";
-    });
+        const model = modelSelect.value;
+        const interval = (1 / document.getElementById('hzRate').value).toFixed(1);
 
-    btnClear.addEventListener('click', () => { consoleDiv.innerText = ""; });
-    function log(msg) { consoleDiv.innerText += `[${new Date().toLocaleTimeString()}] ${msg}\n`; consoleDiv.scrollTop = consoleDiv.scrollHeight; }
+        try {
+            await smartOpen(baudSelect.value);
+            log("🚀 Envoi FRESET...");
+            let wr = port.writable.getWriter();
+            await wr.write(encoder.encode("FRESET\r\n"));
+            wr.releaseLock();
+
+            log("⏳ Reboot (12s)...");
+            await safeClose();
+            await new Promise(r => setTimeout(r, 12000));
+
+            log("Reconnexion usine (115200)...");
+            await smartOpen(115200);
+
+            let cmds = ["UNLOGALL"];
+            if (model.startsWith("UM")) {
+                cmds.push("CONFIG ANTENNA POWERON", "CONFIG NMEAVERSION V411", "CONFIG RTK TIMEOUT 180", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "CONFIG COM2 460800");
+                if (document.getElementById('opMode').value === "DUAL") {
+                    cmds.push(`CONFIG ANTENNADELTAHEN OFFSET ${document.getElementById('offsetX').value} ${document.getElementById('offsetY').value} ${document.getElementById('offsetZ').value}`, "MODE ROVER SURVEY", "CONFIG HEADING TRACTOR");
+                } else { cmds.push("MODE ROVER UAV"); }
+            } else {
+                cmds.push("RTKTYPE ROVER", "SET OBSFREQ 10", "SERIALCONFIG COM2 460800");
+            }
+            document.querySelectorAll('.nmea:checked').forEach(cb => {
+                cmds.push(model.startsWith("UM") ? `${cb.value} COM2 ${interval}` : `LOG COM2 ${cb.value} ONTIME ${interval}`);
+            });
+            cmds.push("SAVECONFIG");
+
+            let mainWr = port.writable.getWriter();
+            for (let c of cmds) {
+                log(">>> " + c);
+                await mainWr.write(encoder.encode(c + "\r\n"));
+                await new Promise(r => setTimeout(r, 2400));
+            }
+            mainWr.releaseLock();
+            log("✅ CONFIGURATION TERMINÉE !");
+        } catch (e) { log("❌ ERREUR : " + e.message); }
+        finally { isConfiguring = false; btnSend.disabled = false; }
+    };
+
+    document.getElementById('btnClear').onclick = () => { consoleDiv.innerText = ""; };
+    document.getElementById('gnssModel').onchange = updateUI;
+    document.getElementById('opMode').onchange = updateUI;
     updateUI();
 </script>
 </body>
