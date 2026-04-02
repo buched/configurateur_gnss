@@ -372,7 +372,7 @@ async function readLoop() {
                 else if(model === "UM982") cmds.push("CONFIG SIGNALGROUP 3 6");
                 cmds.push("CONFIG AGNSS DISABLE", "UNMASK GPS", "MASK BDS", "UNMASK GLO", "UNMASK GAL", "MASK QZSS", "CONFIG COM2 460800");
             } else if (model.startsWith("M20")) {
-                if (model === "M20D") cmds.push("RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS B1IB2IB3IB1CB2AB2BL1L1CL2CL5G1G2E1E5BE5AE6I5", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "ASSIGNALL BEIDOU IDLE", "ASSIGNALL GPS AUTO", "ASSIGNALL GLONASS AUTO", "ASSIGNALL GALILEO AUTO", "ASSIGNALL QZSS IDLE", "ASSIGNALL IRNSS IDLE", "INTERFACEMODE COM2 AUTO AUTO ON");
+                if (model === "M20D") cmds.push("UNLOGALL", "RTKTYPE ROVER", "DUALANTENNAPOWER OFF", "WORKFREQS ALL ALL", "SNRCUTOFF 15", "RTKTIMEOUT 180", "SET OBSFREQ 10", "INTERFACEMODE COM2 AUTO AUTO ON", "SETINSTRANSLATION ANT1 0 0 0 0 0 0", "SETINSUPDATE ADR DISABLE", "SETINSPROFILE FOOT");
                 if (mode === "DUAL" && model === "M20D") {
                     const x = document.getElementById('offsetX').value;
                     const y = document.getElementById('offsetY').value;
