@@ -1,28 +1,30 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Installateur Balance SOSH</title>
     <style>
         body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
-        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
-        h1 { color: #1c1e21; margin-bottom: 10px; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; max-width: 450px; }
+        h1 { color: #1c1e21; margin: 0 0 10px 0; }
         p { color: #606770; margin-bottom: 30px; }
+        #install-btn { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h1>Balance SOSH</h1>
-        <p>Installation du micrologiciel v1.0</p>
+        <p>Prêt pour l'installation sur votre ESP32</p>
 
-        <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web-tools.js?module"></script>
+        <script type="module" src="https://cdn.jsdelivr.net/npm/esp-web-tools@10/dist/web-tools.js"></script>
 
         <esp-web-install-button manifest="manifest.json">
-            <button slot="activate" style="background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold;">
-                CONNECTER ET INSTALLER
-            </button>
-            <span slot="unsupported">Désolé, Web Serial n'est pas disponible ici.</span>
+            <button slot="activate" id="install-btn">CONNECTER ET INSTALLER</button>
+            <div slot="unsupported">
+                <p style="color: #d32f2f;">⚠️ Erreur de sécurité ou navigateur non compatible.</p>
+                <small>Assurez-vous d'utiliser Chrome ou Edge en HTTPS.</small>
+            </div>
         </esp-web-install-button>
     </div>
 
