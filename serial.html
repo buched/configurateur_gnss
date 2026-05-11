@@ -28,7 +28,9 @@
         <h1>Balance SOSH</h1>
         <p>Installation du micrologiciel v1.0</p>
 
-        <script type="module" src="https://unpkg.com/esp-web-tools@10.2.1/dist/web-tools.js"></script>
+                <script type="module">
+          import "https://esm.sh/esp-web-tools@10";
+        </script>
 
         <esp-web-install-button manifest="manifest.json">
             <button slot="activate">INSTALLER</button>
