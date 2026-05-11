@@ -2,28 +2,29 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Flash Balance SOSH</title>
+    <title>Installateur Balance SOSH</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #eceff1; }
-        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: inline-block; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; }
-        button:hover { background: #0056b3; }
-        #log { margin-top: 20px; text-align: left; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; background: #222; color: #0f0; padding: 10px; display: none;}
+        body { font-family: system-ui, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f0f2f5; }
+        .card { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); text-align: center; }
+        h1 { color: #1c1e21; margin-bottom: 10px; }
+        p { color: #606770; margin-bottom: 30px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h1>Installateur Local ESP32</h1>
-    <p>Fichier : <b>balance_SOSH_sam_3403.ino.merged.bin</b></p>
-    
-    <script type="module" src="https://www.gstatic.com/esp-web-tools/static/web-tools.js"></script>
+    <div class="card">
+        <h1>Balance SOSH</h1>
+        <p>Installation du micrologiciel v1.0</p>
 
-    <esp-web-install-button manifest="./manifest.json">
-        <button slot="activate">CONNECTER ET FLASHER</button>
-        <span slot="unsupported">Désolé, votre navigateur ne supporte pas le flashage USB.</span>
-    </esp-web-install-button>
-</div>
+        <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web-tools.js?module"></script>
+
+        <esp-web-install-button manifest="manifest.json">
+            <button slot="activate" style="background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 10px; cursor: pointer; font-size: 16px; font-weight: bold;">
+                CONNECTER ET INSTALLER
+            </button>
+            <span slot="unsupported">Désolé, Web Serial n'est pas disponible ici.</span>
+        </esp-web-install-button>
+    </div>
 
 </body>
 </html>
