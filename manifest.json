@@ -9,7 +9,6 @@
       "chipFamily": "ESP32",
       "parts": [
         { "path": "balance_SOSH_sam_3403.ino.merged.bin", "offset": 0 },
-        { "path": "balance_SOSH_sam_9533.ino.merged.bin", "offset": 0 },
       ]
     },
     {
