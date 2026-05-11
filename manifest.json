@@ -1,16 +1,18 @@
 {
-  "name": "Balance SOSH",
-  "version": "1.0",
+  "name": "ESPHome",
+  "version": "2021.11.0",
+  "home_assistant_domain": "esphome",
+  "funding_url": "https://esphome.io/guides/supporters.html",
+  "new_install_prompt_erase": false,
   "builds": [
     {
-      "name": "3403",
       "chipFamily": "ESP32",
       "parts": [
-        { "path": "balance_SOSH_sam_3403.ino.merged.bin", "offset": 0 }
+        { "path": "balance_SOSH_sam_3403.ino.merged.bin", "offset": 0 },
+        { "path": "balance_SOSH_sam_9533.ino.merged.bin", "offset": 0 },
       ]
     },
     {
-      "name": "9533",
       "chipFamily": "ESP32",
       "parts": [
         { "path": "balance_SOSH_sam_9533.ino.merged.bin", "offset": 0 }
