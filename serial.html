@@ -2,29 +2,37 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Installateur Balance SOSH</title>
     <style>
         body { font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; background: #f4f7f9; }
         .card { background: white; padding: 40px; border-radius: 15px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center; }
-        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        h1 { margin-top: 0; color: #333; }
+        /* Style pour le bouton interne */
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            font-size: 16px;
+        }
+        button:hover { background: #0056b3; }
     </style>
 </head>
 <body>
 
     <div class="card">
         <h1>Balance SOSH</h1>
-        <p>Installation du micrologiciel</p>
+        <p>Installation du micrologiciel v1.0</p>
 
-        <script type="module">
-          import "https://esm.sh/esp-web-tools@10";
-        </script>
+        <script type="module" src="https://unpkg.com/esp-web-tools@10.2.1/dist/web-tools.js"></script>
 
         <esp-web-install-button manifest="manifest.json">
-            <button slot="activate">CONNECTER ET INSTALLER</button>
-            <div slot="unsupported">
-                ⚠️ Erreur : Le script de flashage n'a pas pu charger.<br>
-                Vérifiez votre connexion ou utilisez Chrome/Edge.
-            </div>
+            <button slot="activate">INSTALLER</button>
+            <span slot="unsupported">Désolé, votre navigateur ne supporte pas le flashage USB.</span>
         </esp-web-install-button>
     </div>
 
