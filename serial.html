@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flash Balance SOSH</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #eceff1; }
+        .box { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display: inline-block; }
+        button { background: #007bff; color: white; border: none; padding: 15px 30px; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        #log { margin-top: 20px; text-align: left; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; background: #222; color: #0f0; padding: 10px; display: none;}
+    </style>
+</head>
+<body>
+
+<div class="box">
+    <h1>Installateur Local ESP32</h1>
+    <p>Fichier : <b>balance_SOSH_sam_3403.ino.merged.bin</b></p>
+    
+    <script type="module" src="https://www.gstatic.com/esp-web-tools/static/web-tools.js"></script>
+
+    <esp-web-install-button manifest="./manifest.json">
+        <button slot="activate">CONNECTER ET FLASHER</button>
+        <span slot="unsupported">Désolé, votre navigateur ne supporte pas le flashage USB.</span>
+    </esp-web-install-button>
+</div>
+
+</body>
+</html>
