@@ -1,0 +1,12 @@
+{
+  "name": "Balance SOSH",
+  "version": "1.0",
+  "builds": [
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "balance_SOSH_0759773698.ino.merged.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
