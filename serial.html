@@ -5,18 +5,26 @@
 <body>
     <h1>Sample project for demoing ESP Web Tools</h1>
 
-<div class="container">
-        <div class="card">
-            <h3>Version 3403</h3>
-            <p>Firmware standard pour module 3403</p>
-            <esp-web-install-button manifest="manifest_3403.json"></esp-web-install-button>
-        </div>
+    <div id="main" style="display: none;">
 
-        <div class="card">
-            <h3>Version 9533</h3>
-            <p>Firmware alternatif pour module 9533</p>
-            <esp-web-install-button manifest="manifest_9533.json"></esp-web-install-button>
-        </div>
+        <br>
+		<h4>Version 3403</h4>
+	<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+        <esp-web-install-button id="installButton" manifest="manifest3403.json"></esp-web-install-button>
+        <br>
+        <span>NOTE: Make sure to close anything using your devices com port (e.g. Serial monitor)</span>
+    </div>
+	<div id="main" style="display: none;">
+
+        <br>
+		<h4>Version 9533</h4>
+	<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+        <esp-web-install-button id="installButton" manifest="manifest9533.json"></esp-web-install-button>
+        <br>
+        <span>NOTE: Make sure to close anything using your devices com port (e.g. Serial monitor)</span>
+    </div>
+    <div id="notSupported" style="display: none;">
+        Your browser does not support the Web Serial API. Try Chrome
     </div>
     
 
