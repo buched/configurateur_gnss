@@ -1,43 +1,39 @@
 <!DOCTYPE html>
-<html>
-
-
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Configurateur GNSS / Balance SOSH</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #f4f7f9; }
+        .container { display: flex; justify-content: center; gap: 20px; margin-top: 30px; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 250px; }
+        h3 { margin-top: 0; color: #333; }
+        span { display: block; margin-top: 15px; font-size: 12px; color: #666; }
+    </style>
+</head>
 <body>
-    <h1>Sample project for demoing ESP Web Tools</h1>
 
-    <div id="main" style="display: none;">
+    <h1>Sélection du Firmware - Balance SOSH</h1>
+    <p>Choisissez la version adaptée à votre matériel :</p>
 
-        <br>
-		<h4>Version 3403</h4>
-	<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
-        <esp-web-install-button id="installButton" manifest="manifest3403.json"></esp-web-install-button>
-        <br>
-        <span>NOTE: Make sure to close anything using your devices com port (e.g. Serial monitor)</span>
+    <script type="module" src="https://unpkg.com/esp-web-tools@7.3.1/dist/web/install-button.js?module"></script>
+
+    <div class="container">
+        <div class="card">
+            <h3>Version 3403</h3>
+            <p>Firmware standard pour module 3403</p>
+            <esp-web-install-button manifest="manifest_3403.json"></esp-web-install-button>
+        </div>
+
+        <div class="card">
+            <h3>Version 9533</h3>
+            <p>Firmware alternatif pour module 9533</p>
+            <esp-web-install-button manifest="manifest_9533.json"></esp-web-install-button>
+        </div>
     </div>
-	<div id="main" style="display: none;">
 
-        <br>
-		<h4>Version 9533</h4>
-	<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
-        <esp-web-install-button id="installButton" manifest="manifest9533.json"></esp-web-install-button>
-        <br>
-        <span>NOTE: Make sure to close anything using your devices com port (e.g. Serial monitor)</span>
-    </div>
-    <div id="notSupported" style="display: none;">
-        Your browser does not support the Web Serial API. Try Chrome
-    </div>
-    
-
-    <script>
-        if(navigator.serial){
-            document.getElementById("notSupported").style.display = 'none';
-            document.getElementById("main").style.display = 'block';
-        } else {
-            document.getElementById("notSupported").style.display = 'block';
-            document.getElementById("main").style.display = 'none';
-        }
-    </script>
+    <br><br>
+    <span>NOTE : Fermez l'IDE Arduino ou tout moniteur série avant de lancer le flashage.</span>
 
 </body>
-
 </html>
